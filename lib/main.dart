@@ -14,7 +14,6 @@ class AlqadiEducationApp extends StatelessWidget {
       title: 'برنامج محمد القاضي التعليمي العلمي',
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'sans',
         colorSchemeSeed: Colors.blue,
       ),
       home: const HomePage(),
@@ -40,16 +39,40 @@ class HomePage extends StatelessWidget {
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           children: [
-            _item(context, 'إنشاء اختبار', Icons.edit_document),
-            _item(context, 'الصفوف الدراسية', Icons.school),
-            _item(context, 'المواد الدراسية', Icons.menu_book),
-            _item(context, 'اختباراتي', Icons.folder),
-            _item(context, 'معاينة الاختبار', Icons.preview),
-            _item(context, 'إعدادات', Icons.settings),
+            _item('إنشاء اختبار', Icons.edit_document),
+            _item('الصفوف الدراسية', Icons.school),
+            _item('المواد الدراسية', Icons.menu_book),
+            _item('اختباراتي', Icons.folder),
+            _item('معاينة الاختبار', Icons.preview),
+            _item('الإعدادات', Icons.settings),
           ],
         ),
       ),
     );
   }
 
-  Widget _item(BuildContext context, String title, IconData icon) {
+  Widget _item(String title, IconData icon) {
+    return Card(
+      elevation: 3,
+      child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 45),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
