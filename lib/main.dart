@@ -2036,6 +2036,77 @@ FilledButton(
 
     await AppStorage.saveExams(exams);
 
+trailing: IconButton(
+  icon: const Icon(Icons.delete),
+  onPressed: () {
+    setDialogState(() {
+      questions.removeAt(index);
+    });
+  },
+),
+),
+);
+},
+),
+const SizedBox(height: 10),
+OutlinedButton.icon(
+  onPressed: () async {
+    final question = await addQuestionDialog(
+      context,
+    );
+
+    if (question != null) {
+      setDialogState(() {
+        questions.add(question);
+      });
+    }
+  },
+  icon: const Icon(Icons.add),
+  label: const Text('إضافة سؤال'),
+),
+],
+),
+),
+actions: [
+TextButton(
+  onPressed: () {
+    Navigator.pop(dialogContext);
+  },
+  child: const Text('إلغاء'),
+),
+FilledButton(
+  onPressed: () async {
+    final title = titleController.text.trim();
+
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('اكتب اسم الاختبار أولًا'),
+        ),
+      );
+      return;
+    }
+
+    if (questions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('أضف سؤالًا واحدًا على الأقل'),
+        ),
+      );
+      return;
+    }
+
+    exams.add({
+      'id': const Uuid().v4(),
+      'title': title,
+      'grade': selectedGrade,
+      'subject': selectedSubject,
+      'questions': questions,
+      'date': DateTime.now().toIso8601String(),
+    });
+
+    await AppStorage.saveExams(exams);
+
     if (!mounted) return;
 
     setState(() {});
@@ -2044,9 +2115,7 @@ FilledButton(
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text(
-          'تم إنشاء الاختبار بنجاح',
-        ),
+        content: Text('تم إنشاء الاختبار بنجاح'),
       ),
     );
   },
@@ -2057,6 +2126,8 @@ FilledButton(
 },
 );
 }
+
+titleController.dispose();
 
 titleController.dispose();
 }
