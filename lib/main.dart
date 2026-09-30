@@ -1853,278 +1853,200 @@ class _ExamsAdminPageState extends State<ExamsAdminPage> {
     loadExams();
   }
 
-  Future<void> loadExams() async {
-    final data = await AppStorage.getExams();
+Future<void> addExam() async {
+  final titleController = TextEditingController();
 
-    if (!mounted) return;
+  String selectedGrade = grades.first;
+  String selectedSubject = subjects.first;
 
-    setState(() {
-      exams = data;
-      loading = false;
-    });
-  }
+  final List<Map<String, dynamic>> questions = [];
 
-  Future<void> addExam() async {
-    final titleController = TextEditingController();
-    String selectedGrade = grades.first;
-    String selectedSubject = subjects.first;
-
-    final List<Map<String, dynamic>> questions = [];
-
-    await showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('إنشاء اختبار جديد'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم الاختبار',
-                        border: OutlineInputBorder(),
-                      ),
+  await showDialog(
+    context: context,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('إنشاء اختبار جديد'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'اسم الاختبار',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(height: 15),
-                    DropdownButtonFormField<String>(
-                      value: selectedGrade,
-                      decoration: const InputDecoration(
-                        labelText: 'الصف الدراسي',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: grades
-                          .map(
-                            (grade) => DropdownMenuItem(
-                              value: grade,
-                              child: Text(grade),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value == null) return;
+                  ),
+                  const SizedBox(height: 15),
+                  DropdownButtonFormField<String>(
+                    value: selectedGrade,
+                    decoration: const InputDecoration(
+                      labelText: 'الصف الدراسي',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: grades.map((grade) {
+                      return DropdownMenuItem<String>(
+                        value: grade,
+                        child: Text(grade),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
 
+                      setDialogState(() {
+                        selectedGrade = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 15),
+                  DropdownButtonFormField<String>(
+                    value: selectedSubject,
+                    decoration: const InputDecoration(
+                      labelText: 'المادة',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: subjects.map((subject) {
+                      return DropdownMenuItem<String>(
+                        value: subject,
+                        child: Text(subject),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+
+                      setDialogState(() {
+                        selectedSubject = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  const Text(
+                    'الأسئلة',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (questions.isEmpty)
+                    const Text('لم تتم إضافة أسئلة بعد'),
+                  ...List.generate(
+                    questions.length,
+                    (index) {
+                      final question = questions[index];
+
+                      return Card(
+                        child: ListTile(
+                          title: Text(
+                            '${index + 1}. ${question['question']}',
+                          ),
+                          subtitle: Text(
+                            'الإجابة الصحيحة: '
+                            '${question['options'][question['correct']]}',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              setDialogState(() {
+                                questions.removeAt(index);
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final question =
+                          await addQuestionDialog(context);
+
+                      if (question != null) {
                         setDialogState(() {
-                          selectedGrade = value;
+                          questions.add(question);
                         });
-                      },
-                    ),
-                    const SizedBox(height: 15),
-                    DropdownButtonFormField<String>(
-                      value: selectedSubject,
-                      decoration: const InputDecoration(
-                        labelText: 'المادة',
-                        border: OutlineInputBorder(),
+                      }
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('إضافة سؤال'),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                },
+                child: const Text('إلغاء'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final title =
+                      titleController.text.trim();
+
+                  if (title.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'اكتب اسم الاختبار أولًا',
+                        ),
                       ),
-                      items: subjects
-                          .map(
-                            (subject) => DropdownMenuItem(
-                              value: subject,
-                              child: Text(subject),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value == null) return;
+                    );
+                    return;
+                  }
 
-                        setDialogState(() {
-                          selectedSubject = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    const Divider(),
-                    const Text(
-                      'الأسئلة',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                  if (questions.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'أضف سؤالًا واحدًا على الأقل',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  exams.add({
+                    'id': const Uuid().v4(),
+                    'title': title,
+                    'grade': selectedGrade,
+                    'subject': selectedSubject,
+                    'questions': questions,
+                    'date':
+                        DateTime.now().toIso8601String(),
+                  });
+
+                  await AppStorage.saveExams(exams);
+
+                  if (!mounted) return;
+
+                  setState(() {});
+
+                  Navigator.pop(dialogContext);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'تم إنشاء الاختبار بنجاح',
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    if (questions.isEmpty)
-                      const Text(
-                        'لم تتم إضافة أسئلة بعد',
-                      ),
-                    ...List.generate(
-                      questions.length,
-                      (index) {
-                        final question = questions[index];
-
-                        return Card(
-                          child: ListTile(
-                            title: Text(
-                              '${index + 1}. ${question['question']}',
-                            ),
-                            subtitle: Text(
-                              'الإجابة الصحيحة: '
-                              '${question['options'][question['correct']]}',
-                            ),
-                            trailing:IconButton(
-  icon: const Icon(Icons.delete),
-  onPressed: () {
-    setDialogState(() {
-      questions.removeAt(index);
-    });
-  },
-),
-),
-);
-},
-),
-const SizedBox(height: 10),
-OutlinedButton.icon(
-  onPressed: () async {
-    final question = await addQuestionDialog(
-      context,
-    );
-
-    if (question != null) {
-      setDialogState(() {
-        questions.add(question);
-      });
-    }
-  },
-  icon: const Icon(Icons.add),
-  label: const Text('إضافة سؤال'),
-),
-],
-),
-),
-actions: [
-TextButton(
-  onPressed: () {
-    Navigator.pop(dialogContext);
-  },
-  child: const Text('إلغاء'),
-),
-FilledButton(
-  onPressed: () async {
-    final title = titleController.text.trim();
-
-    if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('اكتب اسم الاختبار أولًا'),
-        ),
+                  );
+                },
+                child: const Text('حفظ الاختبار'),
+              ),
+            ],
+          );
+        },
       );
-      return;
-    }
+    },
+  );
 
-    if (questions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'أضف سؤالًا واحدًا على الأقل',
-          ),
-        ),
-      );
-      return;
-    }
-
-    exams.add({
-      'id': const Uuid().v4(),
-      'title': title,
-      'grade': selectedGrade,
-      'subject': selectedSubject,
-      'questions': questions,
-      'date': DateTime.now().toIso8601String(),
-    });
-
-    await AppStorage.saveExams(exams);
-
-trailing: IconButton(
-  icon: const Icon(Icons.delete),
-  onPressed: () {
-    setDialogState(() {
-      questions.removeAt(index);
-    });
-  },
-),
-),
-);
-},
-),
-const SizedBox(height: 10),
-OutlinedButton.icon(
-  onPressed: () async {
-    final question = await addQuestionDialog(
-      context,
-    );
-
-    if (question != null) {
-      setDialogState(() {
-        questions.add(question);
-      });
-    }
-  },
-  icon: const Icon(Icons.add),
-  label: const Text('إضافة سؤال'),
-),
-],
-),
-),
-actions: [
-TextButton(
-  onPressed: () {
-    Navigator.pop(dialogContext);
-  },
-  child: const Text('إلغاء'),
-),
-FilledButton(
-  onPressed: () async {
-    final title = titleController.text.trim();
-
-    if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('اكتب اسم الاختبار أولًا'),
-        ),
-      );
-      return;
-    }
-
-    if (questions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('أضف سؤالًا واحدًا على الأقل'),
-        ),
-      );
-      return;
-    }
-
-    exams.add({
-      'id': const Uuid().v4(),
-      'title': title,
-      'grade': selectedGrade,
-      'subject': selectedSubject,
-      'questions': questions,
-      'date': DateTime.now().toIso8601String(),
-    });
-
-    await AppStorage.saveExams(exams);
-
-    if (!mounted) return;
-
-    setState(() {});
-
-    Navigator.pop(dialogContext);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('تم إنشاء الاختبار بنجاح'),
-      ),
-    );
-  },
-  child: const Text('حفظ الاختبار'),
-),
-],
-);
-},
-);
+  titleController.dispose();
 }
 
 titleController.dispose();
