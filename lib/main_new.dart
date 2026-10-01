@@ -1692,7 +1692,7 @@ class ExamPreviewPage extends StatelessWidget {
       lines.add('');
     }
 
-    return Printing.convertHtmlToPdf(
+    return Printing.convertHtml(
       html: '<html><body dir="rtl"><pre>${_escape(lines.join('\n'))}</pre></body></html>',
     );
   }
