@@ -23,8 +23,6 @@ jobs:
       - name: Create Android project
         run: flutter create --project-name mohamed_alqadi_education --platforms=android .
 
-      - 
-
       - name: Fix Android compileSdk
         run: |
           if [ -f android/app/build.gradle.kts ]; then
