@@ -29,22 +29,27 @@ jobs:
       - name: Fix Android compileSdk
         run: |
           if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
-            sed -i 's/compileSdk flutter.compileSdkVersion/compileSdk 35/g' android/app/build.gradle.kts
+            sed -i -E 's/compileSdk(Version)?[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
+            sed -i -E 's/compileSdk(Version)?[[:space:]]+flutter\.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
           fi
 
           if [ -f android/app/build.gradle ]; then
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g' android/app/build.gradle
-            sed -i 's/compileSdk flutter.compileSdkVersion/compileSdk 35/g' android/app/build.gradle
+            sed -i -E 's/compileSdkVersion[[:space:]]+flutter\.compileSdkVersion/compileSdkVersion 35/g' android/app/build.gradle
+            sed -i -E 's/compileSdk[[:space:]]+flutter\.compileSdkVersion/compileSdk 35/g' android/app/build.gradle
           fi
+
+          echo "Checking compileSdk:"
+          grep -R "compileSdk" android/app || true
 
       - name: Verify main.dart
         run: |
           echo "Checking main.dart..."
+
           if grep -n "convertHtmlToPdf" lib/main.dart; then
             echo "ERROR: convertHtmlToPdf still exists in main.dart"
             exit 1
           fi
+
           echo "main.dart is OK"
 
       - name: Get dependencies
