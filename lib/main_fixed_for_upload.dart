@@ -501,11 +501,56 @@ class _PdfBookPageState extends State<PdfBookPage> {
       );
 }
 
-class PdfViewerPage extends StatelessWidget {
+class PdfViewerPage extends StatefulWidget {
   final String title;
   final Uint8List bytes;
 
   const PdfViewerPage({
+    super.key,
+    required this.title,
+    required this.bytes,
+  });
+
+  @override
+  State<PdfViewerPage> createState() => _PdfViewerPageState();
+}
+
+class _PdfViewerPageState extends State<PdfViewerPage> {
+  late final PdfControllerPinch controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = PdfControllerPinch(
+      document: PdfDocument.openData(widget.bytes),
+    );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return rtl(
+      Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
+          centerTitle: true,
+        ),
+        body: PdfViewPinch(
+          controller: controller,
+          scrollDirection: Axis.vertical,
+          minScale: 1.0,
+          maxScale: 5.0,
+        ),
+      ),
+    );
+  }
+}
     super.key,
     required this.title,
     required this.bytes,
