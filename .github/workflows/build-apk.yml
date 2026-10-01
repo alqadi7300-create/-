@@ -23,8 +23,7 @@ jobs:
       - name: Create Android project
         run: flutter create --project-name mohamed_alqadi_education --platforms=android .
 
-      - name: Use new main.dart
-        run: cp lib/main_new.dart lib/main.dart
+      - 
 
       - name: Fix Android compileSdk
         run: |
