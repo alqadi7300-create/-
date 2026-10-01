@@ -26,17 +26,26 @@ jobs:
       - name: Use new main.dart
         run: cp lib/main_new.dart lib/main.dart
 
-      - name: Set Android SDK 35
+      - name: Fix Android compileSdk
         run: |
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
+            sed -i 's/compileSdk flutter.compileSdkVersion/compileSdk 35/g' android/app/build.gradle.kts
+          fi
+
           if [ -f android/app/build.gradle ]; then
             sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g' android/app/build.gradle
             sed -i 's/compileSdk flutter.compileSdkVersion/compileSdk 35/g' android/app/build.gradle
           fi
 
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
-            sed -i 's/compileSdk flutter.compileSdkVersion/compileSdk 35/g' android/app/build.gradle.kts
+      - name: Verify main.dart
+        run: |
+          echo "Checking main.dart..."
+          if grep -n "convertHtmlToPdf" lib/main.dart; then
+            echo "ERROR: convertHtmlToPdf still exists in main.dart"
+            exit 1
           fi
+          echo "main.dart is OK"
 
       - name: Get dependencies
         run: flutter pub get
