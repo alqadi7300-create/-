@@ -1,0 +1,45 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.5"
+          channel: stable
+
+      - name: Check project
+        run: |
+          test -f pubspec.yaml
+          test -f lib/main.dart
+
+      - name: Create Android project
+        run: |
+          if [ ! -d android ]; then
+            flutter create --project-name mohamed_alqadi_education --platforms=android .
+          fi
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mohamed-alqadi-education-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
