@@ -11,52 +11,90 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: "3.24.5"
           channel: stable
+          cache: true
 
-      - name: Create Android project
-        run: flutter create --project-name mohamed_alqadi_education --platforms=android .
+      - name: Check project files
+        run: |
+          echo "=== Project files ==="
+          ls -la
+          echo "=== lib ==="
+          ls -la lib
+          echo "=== pubspec.yaml ==="
+          test -f pubspec.yaml
+          echo "pubspec.yaml found"
+          echo "=== main.dart ==="
+          test -f lib/main.dart
+          echo "lib/main.dart found"
 
-      - name: Fix Android compileSdk
+      - name: Prepare Android project
+        run: |
+          if [ ! -d android ]; then
+            flutter create \
+              --project-name mohamed_alqadi_education \
+              --platforms=android \
+              .
+          fi
+
+      - name: Set Android SDK
         run: |
           if [ -f android/app/build.gradle.kts ]; then
-            sed -i -E 's/compileSdk(Version)?[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
-            sed -i -E 's/compileSdk(Version)?[[:space:]]+flutter\.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
+            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
+            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle.kts
+            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/g' android/app/build.gradle.kts
           fi
 
           if [ -f android/app/build.gradle ]; then
-            sed -i -E 's/compileSdkVersion[[:space:]]+flutter\.compileSdkVersion/compileSdkVersion 35/g' android/app/build.gradle
-            sed -i -E 's/compileSdk[[:space:]]+flutter\.compileSdkVersion/compileSdk 35/g' android/app/build.gradle
+            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g' android/app/build.gradle
+            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
+            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 35/g' android/app/build.gradle
           fi
 
-          echo "Checking compileSdk:"
-          grep -R "compileSdk" android/app || true
+          echo "=== Android SDK configuration ==="
+          grep -R "compileSdk\|minSdk\|targetSdk" android/app || true
 
-      - name: Verify main.dart
+      - name: Verify Dart source
         run: |
-          echo "Checking main.dart..."
+          echo "Checking lib/main.dart..."
 
           if grep -n "convertHtmlToPdf" lib/main.dart; then
-            echo "ERROR: convertHtmlToPdf still exists in main.dart"
+            echo "ERROR: obsolete convertHtmlToPdf found"
             exit 1
           fi
 
-          echo "main.dart is OK"
+          if grep -n "TODO\|IMPLEMENT" lib/main.dart; then
+            echo "WARNING: TODO/IMPLEMENT markers found"
+          fi
+
+          echo "Dart source check completed."
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Analyze Flutter project
+        run: |
+          flutter analyze --no-fatal-infos
+
+      - name: Build Release APK
+        run: |
+          flutter build apk --release
+
+      - name: Verify APK
+        run: |
+          test -f build/app/outputs/flutter-apk/app-release.apk
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
+          echo "APK successfully created."
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: mohamed-alqadi-education-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
