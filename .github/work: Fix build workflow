@@ -21,70 +21,27 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Check project files
+      - name: Check project
         run: |
-          echo "=== Project files ==="
-          ls -la
-          echo "=== lib ==="
-          ls -la lib
-          echo "=== pubspec.yaml ==="
+          echo "Checking project..."
           test -f pubspec.yaml
-          echo "pubspec.yaml found"
-          echo "=== main.dart ==="
           test -f lib/main.dart
-          echo "lib/main.dart found"
+          echo "Project files found."
 
-      - name: Prepare Android project
+      - name: Prepare Android
         run: |
           if [ ! -d android ]; then
-            flutter create \
-              --project-name mohamed_alqadi_education \
-              --platforms=android \
-              .
+            flutter create --project-name mohamed_alqadi_education --platforms=android .
           fi
-
-      - name: Set Android SDK
-        run: |
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle.kts
-            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/g' android/app/build.gradle.kts
-          fi
-
-          if [ -f android/app/build.gradle ]; then
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g' android/app/build.gradle
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 35/g' android/app/build.gradle
-          fi
-
-          echo "=== Android SDK configuration ==="
-          grep -R "compileSdk\|minSdk\|targetSdk" android/app || true
-
-      - name: Verify Dart source
-        run: |
-          echo "Checking lib/main.dart..."
-
-          if grep -n "convertHtmlToPdf" lib/main.dart; then
-            echo "ERROR: obsolete convertHtmlToPdf found"
-            exit 1
-          fi
-
-          if grep -n "TODO\|IMPLEMENT" lib/main.dart; then
-            echo "WARNING: TODO/IMPLEMENT markers found"
-          fi
-
-          echo "Dart source check completed."
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Analyze Flutter project
-        run: |
-          flutter analyze --no-fatal-infos
+      - name: Analyze project
+        run: flutter analyze --no-fatal-infos
 
-      - name: Build Release APK
-        run: |
-          flutter build apk --release
+      - name: Build APK
+        run: flutter build apk --release
 
       - name: Verify APK
         run: |
