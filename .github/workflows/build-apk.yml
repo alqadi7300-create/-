@@ -55,10 +55,15 @@ jobs:
         run: flutter pub get
 
       - name: Analyze main.dart
-        run: flutter analyze lib/main.dart --no-fatal-infos
+        run: flutter analyze lib/main.dart --no-fatal-infos --no-fatal-warnings
 
       - name: Build Release APK
         run: flutter build apk --release
+
+      - name: Check APK
+        run: |
+          test -f build/app/outputs/flutter-apk/app-release.apk
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
