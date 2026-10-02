@@ -1,4 +1,5 @@
 name: Build APK
+
 on:
   workflow_dispatch:
   push:
@@ -20,7 +21,7 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Check project
+      - name: Check project files
         run: |
           test -f pubspec.yaml
           test -f lib/main.dart
@@ -33,34 +34,19 @@ jobs:
               --platforms=android .
           fi
 
-      - name: Configure Android
+      - name: Install Android SDK 35
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      - name: Configure Android SDK versions
         run: |
           if [ -f android/app/build.gradle ]; then
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g' android/app/build.gradle
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 35/g' android/app/build.gradle
-          fi
-
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle.kts
-            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/g' android/app/build.gradle.kts
-          fi
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Build Release APK
-        run: flutter build apk --release
-
-      - name: Check APK
-        run: |
-          test -f build/app/outputs/flutter-apk/app-release.apk
-          ls -lh build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: mohamed-alqadi-education-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
+            sed -i -E 's/compileSdkVersion[[:space:]]+flutter\.compileSdkVersion/compileSdkVersion 35/g' android/app/build.gradle
+            sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle
+            sed -i -E 's/minSdkVersion[[:space:]]+flutter\.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
+            sed -i -E 's/minSdk[[:space:]]*=[[:space:]]*flutter\.minSdkVersion/minSdk = 21/g' android/app/build.gradle
+            sed -i -E 's/targetSdkVersion[[:space:]]+flutter\.targetSdkVersion/targetSdkVersion 35/g' android/app/build.gradle
+            sed
