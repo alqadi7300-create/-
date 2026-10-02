@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,44 +21,78 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Check required files
+      - name: Check project
         run: |
           test -f pubspec.yaml
           test -f lib/main.dart
-          test -f teacher_mohamed_alqadi.png
 
       - name: Create Android project
         run: |
-          if [ ! -d android ]; then
+          if [ ! -d "android" ]; then
             flutter create --project-name mohamed_alqadi_education --platforms=android .
           fi
 
-      - name: Configure Android SDK
+      - name: Install Android SDK 35
         run: |
-          if [ -f android/app/build.gradle ]; then
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g' android/app/build.gradle
-            sed -i 's/compileSdkVersion [0-9][0-9]*/compileSdkVersion 35/g' android/app/build.gradle
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 35/g' android/app/build.gradle
-          fi
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' android/app/build.gradle.kts
-            sed -i 's/compileSdk = [0-9][0-9]*/compileSdk = 35/g' android/app/build.gradle.kts
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle.kts
-            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/g' android/app/build.gradle.kts
-          fi
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Configure Android
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          files = [
+              Path("android/app/build.gradle"),
+              Path("android/app/build.gradle.kts"),
+          ]
+
+          for path in files:
+              if not path.exists():
+                  continue
+
+              text = path.read_text()
+
+              replacements = {
+                  "flutter.compileSdkVersion": "35",
+                  "flutter.minSdkVersion": "21",
+                  "flutter.targetSdkVersion": "35",
+              }
+
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+
+              text = text.replace(
+                  "compileSdkVersion flutter.compileSdkVersion",
+                  "compileSdkVersion 35"
+              )
+
+              text = text.replace(
+                  "minSdkVersion flutter.minSdkVersion",
+                  "minSdkVersion 21"
+              )
+
+              text = text.replace(
+                  "targetSdkVersion flutter.targetSdkVersion",
+                  "targetSdkVersion 35"
+              )
+
+              path.write_text(text)
+
+          print("Android configuration updated.")
+          PY
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Generate launcher icon
-        run: dart run flutter_launcher_icons
 
       - name: Build Release APK
         run: flutter build apk --release
 
       - name: Check APK
-        run: test -f build/app/outputs/flutter-apk/app-release.apk
+        run: |
+          test -f build/app/outputs/flutter-apk/app-release.apk
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
