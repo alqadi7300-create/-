@@ -34,11 +34,11 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/teacher_mohamed_alqadi.png
+    - teacher_mohamed_alqadi.png
 
 flutter_icons:
   android: true
   ios: false
-  image_path: "assets/teacher_mohamed_alqadi.png"
+  image_path: "teacher_mohamed_alqadi.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/teacher_mohamed_alqadi.png"
+  adaptive_icon_foreground: "teacher_mohamed_alqadi.png"
