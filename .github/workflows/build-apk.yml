@@ -21,7 +21,7 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Check project files
+      - name: Check project
         run: |
           test -f pubspec.yaml
           test -f lib/main.dart
@@ -35,164 +35,50 @@ jobs:
               --platforms=android .
           fi
 
-      - name: Install Android SDK 35
+      - name: Copy Firebase configuration
         run: |
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-
-          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-
-          "$SDKMANAGER" \
-            "platforms;android-35" \
-            "build-tools;35.0.0"
-
-      - name: Configure Firebase
-        run: |
-          set -e
-
-          echo "Creating Firebase Android configuration..."
-
           mkdir -p android/app
-
           cp google-services.json android/app/google-services.json
+          test -f android/app/google-services.json
 
-          echo "Checking Firebase package name..."
-
+      - name: Configure Android SDK
+        run: |
           python3 - <<'PY'
-          import json
           from pathlib import Path
 
-          data = json.loads(
-              Path("android/app/google-services.json").read_text()
-          )
+          for filename in [
+              "android/app/build.gradle",
+              "android/app/build.gradle.kts",
+          ]:
+              path = Path(filename)
 
-          clients = data.get("client", [])
+              if not path.exists():
+                  continue
 
-          if not clients:
-              raise SystemExit("Firebase client information was not found.")
+              text = path.read_text()
 
-          package_name = clients[0]["client_info"]["android_client_info"]["package_name"]
-
-          print("Firebase package:", package_name)
-
-          expected = "com.example.mohamed_alqadi_education"
-
-          if package_name != expected:
-              raise SystemExit(
-                  f"Wrong Firebase package name: {package_name}. "
-                  f"Expected: {expected}"
+              text = text.replace(
+                  "flutter.compileSdkVersion",
+                  "35"
               )
+
+              text = text.replace(
+                  "flutter.minSdkVersion",
+                  "21"
+              )
+
+              text = text.replace(
+                  "flutter.targetSdkVersion",
+                  "35"
+              )
+
+              path.write_text(text)
+
+          print("Android SDK configuration completed.")
           PY
 
-      - name: Configure Android SDK versions
+      - name: Configure Google Services
         run: |
-          set -e
-
-          if [ -f android/app/build.gradle ]; then
-
-            sed -i -E \
-              's/compileSdkVersion[[:space:]]+flutter\.compileSdkVersion/compileSdkVersion 35/g' \
-              android/app/build.gradle
-
-            sed -i -E \
-              's/compileSdk[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 35/g' \
-              android/app/build.gradle
-
-            sed -i -E \
-              's/minSdkVersion[[:space:]]+flutter\.minSdkVersion/minSdkVersion 21/g' \
-              android/app/build.gradle
-
-            sed -i -E \
-              's/minSdk[[:space:]]*=[[:space:]]*flutter\.minSdkVersion/minSdk = 21/g' \
-              android/app/build.gradle
-
-            sed -i -E \
-              's/targetSdkVersion[[:space:]]+flutter\.targetSdkVersion/targetSdkVersion 35/g' \
-              android/app/build.gradle
-
-            sed -i -E \
-              's/targetSdk[[:space:]]*=[[:space:]]*flutter\.targetSdkVersion/targetSdk = 35/g' \
-              android/app/build.gradle
-
-          fi
-
-          if [ -f android/app/build.gradle.kts ]; then
-
-            sed -i -E \
-              's/compileSdk[[:space:]]*=[[:space:]]*flutter\.compileSdkVersion/compileSdk = 35/g' \
-              android/app/build.gradle.kts
-
-            sed -i -E \
-              's/minSdk[[:space:]]*=[[:space:]]*flutter\.minSdkVersion/minSdk = 21/g' \
-              android/app/build.gradle.kts
-
-            sed -i -E \
-              's/targetSdk[[:space:]]*=[[:space:]]*flutter\.targetSdkVersion/targetSdk = 35/g' \
-              android/app/build.gradle.kts
-
-          fi
-
-          echo "Android SDK configuration:"
-          grep -R -nE 'compileSdk|minSdk|targetSdk' \
-            android/app/build.gradle \
-            android/app/build.gradle.kts 2>/dev/null || true
-
-      - name: Add Google Services Gradle plugin
-        run: |
-          set -e
-
-          python3 - <<'PY'
-          from pathlib import Path
-
-          # Flutter 3.24.5 normally creates the Groovy Gradle files.
-          root = Path("android/build.gradle")
-
-          if root.exists():
-              text = root.read_text()
-
-              if "com.google.gms:google-services" not in text:
-                  marker = "dependencies {"
-
-                  if marker in text:
-                      text = text.replace(
-                          marker,
-                          marker + "\n        classpath 'com.google.gms:google-services:4.5.0'",
-                          1
-                      )
-                  else:
-                      text += """
-
-buildscript {
-    dependencies {
-        classpath 'com.google.gms:google-services:4.5.0'
-    }
-}
-"""
-
-                  root.write_text(text)
-
-          # Also support Kotlin DSL if generated by Flutter.
-          root_kts = Path("android/build.gradle.kts")
-
-          if root_kts.exists():
-              text = root_kts.read_text()
-
-              if 'com.google.gms.google-services' not in text:
-                  marker = "plugins {"
-
-                  if marker in text:
-                      text = text.replace(
-                          marker,
-                          marker + '\n    id("com.google.gms.google-services") version "4.5.0" apply false',
-                          1
-                      )
-
-                  root_kts.write_text(text)
-          PY
-
-      - name: Apply Google Services plugin
-        run: |
-          set -e
-
           python3 - <<'PY'
           from pathlib import Path
 
@@ -202,18 +88,9 @@ buildscript {
               text = groovy.read_text()
 
               if "com.google.gms.google-services" not in text:
-                  plugins_marker = "plugins {"
+                  text += "\napply plugin: 'com.google.gms.google-services'\n"
 
-                  if plugins_marker in text:
-                      text = text.replace(
-                          plugins_marker,
-                          plugins_marker + '\n    id "com.google.gms.google-services"',
-                          1
-                      )
-                  else:
-                      text += "\napply plugin: 'com.google.gms.google-services'\n"
-
-                  groovy.write_text(text)
+              groovy.write_text(text)
 
           kts = Path("android/app/build.gradle.kts")
 
@@ -230,26 +107,90 @@ buildscript {
                           1
                       )
 
-                  kts.write_text(text)
+              kts.write_text(text)
+
+          print("Google Services configuration completed.")
           PY
 
-      - name: Verify Firebase Android configuration
+      - name: Configure Google Services dependency
         run: |
-          set -e
+          python3 - <<'PY'
+          from pathlib import Path
 
+          gradle = Path("android/build.gradle")
+
+          if gradle.exists():
+              text = gradle.read_text()
+
+              dependency = (
+                  "classpath 'com.google.gms:google-services:4.4.2'"
+              )
+
+              if dependency not in text:
+                  marker = "dependencies {"
+
+                  if marker in text:
+                      text = text.replace(
+                          marker,
+                          marker + "\n        " + dependency,
+                          1
+                      )
+
+              gradle.write_text(text)
+
+          print("Google Services dependency configured.")
+          PY
+
+      - name: Verify Firebase
+        run: |
           test -f android/app/google-services.json
 
-          echo "Firebase configuration file:"
-          ls -lh android/app/google-services.json
+          python3 - <<'PY'
+          import json
 
-          echo "Android Gradle files:"
-          ls -lh android/build.gradle android/app/build.gradle 2>/dev/null || true
-          ls -lh android/build.gradle.kts android/app/build.gradle.kts 2>/dev/null || true
+          with open(
+              "android/app/google-services.json",
+              encoding="utf-8"
+          ) as f:
+              data = json.load(f)
+
+          clients = data.get("client", [])
+
+          if not clients:
+              raise SystemExit(
+                  "Firebase client configuration was not found."
+              )
+
+          package_name = (
+              clients[0]
+              ["client_info"]
+              ["android_client_info"]
+              ["package_name"]
+          )
+
+          print("Firebase package:", package_name)
+
+          if package_name != "com.example.mohamed_alqadi_education":
+              raise SystemExit(
+                  "Firebase package name does not match "
+                  "the generated Android application."
+              )
+          PY
+
+      - name: Install Android SDK 35
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+
+          "$SDKMANAGER" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Analyze Dart code
+      - name: Analyze project
         run: |
           flutter analyze --no-fatal-infos
 
@@ -257,13 +198,9 @@ buildscript {
         run: |
           flutter build apk --release
 
-      - name: Check APK
+      - name: Verify APK
         run: |
-          set -e
-
           test -f build/app/outputs/flutter-apk/app-release.apk
-
-          echo "APK successfully created:"
           ls -lh build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK
