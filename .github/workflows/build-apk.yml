@@ -187,6 +187,10 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
+      - name: Remove generated Flutter test
+        run: |
+          rm -rf test
+
       - name: Get dependencies
         run: flutter pub get
 
