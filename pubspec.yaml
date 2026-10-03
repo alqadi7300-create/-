@@ -20,8 +20,11 @@ dependencies:
   pdfx: 2.8.0
   uuid: ^4.5.0
   file_picker: ^8.1.2
+
+  # Firebase
   firebase_core: ^3.6.0
   cloud_firestore: ^5.4.3
+  firebase_auth: ^5.3.1
 
 dev_dependencies:
   flutter_test:
