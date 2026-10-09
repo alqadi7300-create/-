@@ -30,11 +30,17 @@ jobs:
         run: flutter pub get
       - name: Set Android compile SDK
         run: |
-          sdkmanager "platforms;android-36"
-          find android "$HOME/.pub-cache/hosted/pub.dev" -type f \\( -name 'build.gradle' -o -name 'build.gradle.kts' \\) -print0 | while IFS= read -r -d '' f; do
-            sed -i -E \\
-              -e 's/compileSdkVersion[[:space:]]+[^[:space:]]+/compileSdkVersion 36/g' \\
-              -e 's/compileSdk[[:space:]]*=[[:space:]]*[^[:space:]]+/compileSdk = 36/g' \\
+          SDKMANAGER="$(find "$ANDROID_HOME" -type f -name sdkmanager 2>/dev/null | head -1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "Could not locate Android sdkmanager under $ANDROID_HOME"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-36"
+          find android "$HOME/.pub-cache/hosted/pub.dev" -type f -name 'build.gradle*' -print0 | while IFS= read -r -d '' f; do
+            sed -i -E \
+              -e 's/compileSdkVersion[[:space:]]+[^[:space:]]+/compileSdkVersion 36/g' \
+              -e 's/compileSdk[[:space:]]*=[[:space:]]*[^[:space:]]+/compileSdk = 36/g' \
               -e 's/compileSdk[[:space:]]+[^[:space:]]+/compileSdk 36/g' "$f"
           done
           grep -RInE 'compileSdk(Version)?[[:space:]]*(=|[[:space:]])' android "$HOME/.pub-cache/hosted/pub.dev"/*/android 2>/dev/null | head -60 || true
