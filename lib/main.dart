@@ -131,13 +131,13 @@ class _HomePageState extends State<HomePage> {
       ]),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('مرحباً بك في برنامج محمد القاضي التعليمي العلمي', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text('مرحباً بك في منصة محمد القاضي العلمية', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text('اختر صفك ومادتك للوصول إلى الدروس والمواد التعليمية.'),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(value: selectedGrade, decoration: const InputDecoration(labelText: 'الصف الدراسي', border: OutlineInputBorder()), items: grades.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(), onChanged: (v) => setState(() => selectedGrade = v ?? selectedGrade)),
           const SizedBox(height: 12),
-          Wrap(spacing: 8, runSpacing: 8, children: subjects.map((s) => ChoiceChip(label: Text(s), selected: selectedSubject == s, onSelected: (_) => setState(() => selectedSubject = s)).toList()),
+          Wrap(spacing: 8, runSpacing: 8, children: subjects.map((s) => ChoiceChip(label: Text(s), selected: selectedSubject == s, onSelected: (_) => setState(() => selectedSubject = s))).toList()),
         ]))),
         const SizedBox(height: 12),
         Row(children: [Expanded(child: Text('دروس ${selectedSubject} - ${selectedGrade}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))), if (teacherMode) const Chip(label: Text('وضع المعلم'))]),
@@ -151,7 +151,7 @@ class _HomePageState extends State<HomePage> {
             if (v == 'save') await _saveLessonOffline(lesson);
             if (v == 'delete' && teacherMode) { setState(() => lessons.remove(lesson)); await _saveLessons(); }
           }, itemBuilder: (_) => [const PopupMenuItem(value: 'save', child: Text('حفظ الدرس للاستخدام دون إنترنت')), if (teacherMode) const PopupMenuItem(value: 'delete', child: Text('حذف الدرس'))]),
-          onTap: () => showDialog<void>(context: context, builder: (context) => AlertDialog(title: Text(lesson.title), content: SingleChildScrollView(child: Text(lesson.body.isEmpty ? 'لا يوجد شرح نصي لهذا الدرس.' : lesson.body)), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق'))]),
+          onTap: () => showDialog<void>(context: context, builder: (context) => AlertDialog(title: Text(lesson.title), content: SingleChildScrollView(child: Text(lesson.body.isEmpty ? 'لا يوجد شرح نصي لهذا الدرس.' : lesson.body)), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق'))])),
         ))),
         const SizedBox(height: 12),
         const Text('أقسام قيد التطوير: الكتب والملازم، الاختبارات، النتائج، ولوحة الشرف.', style: TextStyle(color: Colors.black54)),
