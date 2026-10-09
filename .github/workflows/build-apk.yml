@@ -41,7 +41,7 @@ jobs:
             sed -i -E \
               -e 's/compileSdkVersion[[:space:]]+[^[:space:]]+/compileSdkVersion 36/g' \
               -e 's/compileSdk[[:space:]]*=[[:space:]]*[^[:space:]]+/compileSdk = 36/g' \
-              -e 's/compileSdk[[:space:]]+[^[:space:]]+/compileSdk 36/g' "$f"
+              -e 's/compileSdk[[:space:]]+[0-9]+/compileSdk 36/g' "$f"
           done
           grep -RInE 'compileSdk(Version)?[[:space:]]*(=|[[:space:]])' android "$HOME/.pub-cache/hosted/pub.dev"/*/android 2>/dev/null | head -60 || true
       - name: Remove generated placeholder test
