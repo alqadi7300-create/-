@@ -137,7 +137,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(value: selectedGrade, decoration: const InputDecoration(labelText: 'الصف الدراسي', border: OutlineInputBorder()), items: grades.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(), onChanged: (v) => setState(() => selectedGrade = v ?? selectedGrade)),
           const SizedBox(height: 12),
-          Wrap(spacing: 8, runSpacing: 8, children: subjects.map((s) => ChoiceChip(label: Text(s), selected: selectedSubject == s, onSelected: (_) => setState(() => selectedSubject = s)).).toList()),
+          Wrap(spacing: 8, runSpacing: 8, children: subjects.map((s) => ChoiceChip(label: Text(s), selected: selectedSubject == s, onSelected: (_) => setState(() => selectedSubject = s)).toList()),
         ]))),
         const SizedBox(height: 12),
         Row(children: [Expanded(child: Text('دروس ${selectedSubject} - ${selectedGrade}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))), if (teacherMode) const Chip(label: Text('وضع المعلم'))]),
