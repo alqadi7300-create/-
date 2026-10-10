@@ -84,12 +84,35 @@ class _MainPageState extends State<MainPage>{
   const SizedBox(height:12),...entries.where((e)=>e.grade==grade&&e.subject==subject&&(e.title+' '+e.body).contains(query)).map((e)=>Card(child:ListTile(onTap:()=>showDialog<void>(context:context,builder:(d)=>AlertDialog(title:Text(e.title),content:SingleChildScrollView(child:Text(e.body.isEmpty?'لا يوجد وصف نصي.':e.body)),actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('إغلاق'))])),leading:Icon(kindIcon(e.type),color:teal),title:Text(e.title),subtitle:Text(e.type+' • '+e.grade+' • '+e.subject),trailing:IconButton(tooltip:'تحميل النص',icon:const Icon(Icons.download_for_offline_outlined),onPressed:()=>download(e))))),
   if(entries.where((e)=>e.grade==grade&&e.subject==subject&&(e.title+' '+e.body).contains(query)).isEmpty)const Padding(padding:EdgeInsets.all(24),child:Text('لا يوجد محتوى مضاف لهذا المستوى والمادة حتى الآن.',textAlign:TextAlign.center))
  ]);
- Widget savedPage()=>ListView(padding:const EdgeInsets.all(16),children:[
-  const Text('المحفوظات دون إنترنت',style:TextStyle(fontSize:25,fontWeight:FontWeight.w900,color:navy)),
-  const Padding(padding:EdgeInsets.symmetric(vertical:8),child:Text('المحتويات التي نزّلتها تبقى داخل التطبيق ويمكن فتح نصوصها دون اتصال.')),
-  ...entries.where((e)=>savedIds.contains(e.id)).map((e)=>Card(child:ListTile(leading:Icon(kindIcon(e.type),color:teal),title:Text(e.title),subtitle:Text(e.grade+' • '+e.subject),onTap:()=>showDialog<void>(context:context,builder:(d)=>AlertDialog(title:Text(e.title),content:SingleChildScrollView(child:Text(e.body.isEmpty?'لا يوجد وصف نصي.':e.body)),actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('إغلاق'))])),trailing:IconButton(tooltip:'إزالة من القائمة',icon:const Icon(Icons.bookmark_remove_outlined),onPressed:()async{setState(()=>savedIds.remove(e.id));await save();}))),
-  if(!entries.any((e)=>savedIds.contains(e.id)))const Padding(padding:EdgeInsets.all(24),child:Text('لا توجد مواد محفوظة بعد. افتح المكتبة واضغط زر التنزيل.',textAlign:TextAlign.center))
- ]);
+ Widget savedPage()=>ListView(
+  padding:const EdgeInsets.all(16),
+  children:[
+    const Text('المحفوظات دون إنترنت',style:TextStyle(fontSize:25,fontWeight:FontWeight.w900,color:navy)),
+    const Padding(padding:EdgeInsets.symmetric(vertical:8),child:Text('المحتويات التي نزّلتها تبقى داخل التطبيق ويمكن فتح نصوصها دون اتصال.')),
+    ...entries.where((e)=>savedIds.contains(e.id)).map((e)=>Card(
+      child:ListTile(
+        leading:Icon(kindIcon(e.type),color:teal),
+        title:Text(e.title),
+        subtitle:Text(e.grade+' • '+e.subject),
+        onTap:()=>showDialog<void>(
+          context:context,
+          builder:(d)=>AlertDialog(
+            title:Text(e.title),
+            content:SingleChildScrollView(child:Text(e.body.isEmpty?'لا يوجد وصف نصي.':e.body)),
+            actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('إغلاق'))],
+          ),
+        ),
+        trailing:IconButton(
+          tooltip:'إزالة من القائمة',
+          icon:const Icon(Icons.bookmark_remove_outlined),
+          onPressed:()async{setState(()=>savedIds.remove(e.id));await save();},
+        ),
+      ),
+    )),
+    if(!entries.any((e)=>savedIds.contains(e.id)))
+      const Padding(padding:EdgeInsets.all(24),child:Text('لا توجد مواد محفوظة بعد. افتح المكتبة واضغط زر التنزيل.',textAlign:TextAlign.center)),
+  ],
+ );
  Widget adminPage()=>ListView(padding:const EdgeInsets.all(16),children:[
   const Text('لوحة المعلم',style:TextStyle(fontSize:26,fontWeight:FontWeight.w900,color:navy)),const SizedBox(height:8),
   if(!teacher)FilledButton.icon(onPressed:login,icon:const Icon(Icons.lock_open),label:const Text('دخول المعلم')),
