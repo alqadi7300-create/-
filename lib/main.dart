@@ -52,7 +52,33 @@ class _MainPageState extends State<MainPage>{
  }
  Future<void> save() async {final p=await SharedPreferences.getInstance();await p.setString('entries',jsonEncode(entries.map((x)=>x.toJson()).toList()));await p.setString('students',jsonEncode(students.map((x)=>x.toJson()).toList()));await p.setString('honors',jsonEncode(honors.map((x)=>x.toJson()).toList()));await p.setString('marks',jsonEncode(marks));await p.setStringList('savedIds',savedIds);}
  Future<void> login() async {code.clear();final v=await showDialog<String>(context:context,builder:(d)=>AlertDialog(title:const Text('دخول المعلم'),content:TextField(controller:code,obscureText:true,decoration:const InputDecoration(labelText:'رمز المعلم التجريبي')),actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(d,code.text.trim()),child:const Text('دخول'))]));if(v=='1234'&&mounted)setState(()=>teacher=true);else if(v!=null&&mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('الرمز التجريبي هو 1234؛ يلزم تغييره قبل النشر')));}
- IconData subIcon(String s)=>s=='الكيمياء'?Icons.science_rounded:s=='الفيزياء'?Icons.bolt_rounded:Icons.biotech_rounded;
+ Future<void> studentLogin() async {
+  code.clear();
+  final v=await showDialog<String>(context:context,builder:(d)=>AlertDialog(
+   title:const Text('دخول الطالب'),
+   content:TextField(controller:code,decoration:const InputDecoration(labelText:'كود التسجيل الذي أعطاك إياه المعلم')),
+   actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(d,code.text.trim()),child:const Text('دخول'))],
+  ));
+  if(v==null||!mounted)return;
+  Student? found;
+  for(final st in students){if(st.code==v){found=st;break;}}
+  if(found==null){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('الكود غير صحيح أو الطالب غير مسجل على هذا الجهاز.')));return;}
+  setState(()=>grade=found!.grade);
+  if(mounted)showDialog<void>(context:context,builder:(d)=>AlertDialog(
+   title:Text('مرحباً '+found!.name),
+   content:SizedBox(width:360,child:ListView(shrinkWrap:true,children:[
+    Text('المستوى: '+found!.grade),
+    const Divider(),
+    const Text('النتائج',style:TextStyle(fontWeight:FontWeight.bold)),
+    ...subjects.map((s)=>ListTile(title:Text(s),trailing:Text((marks[found!.code]?[s]??0).toString()))),
+    const Divider(),
+    const Text('المواد المتاحة',style:TextStyle(fontWeight:FontWeight.bold)),
+    ...entries.where((e)=>e.grade==found!.grade).map((e)=>ListTile(title:Text(e.title),subtitle:Text(e.subject+' • '+e.type),onTap:()=>showDialog<void>(context:context,builder:(x)=>AlertDialog(title:Text(e.title),content:SingleChildScrollView(child:Text(e.body.isEmpty?'لا يوجد وصف نصي.':e.body)),actions:[TextButton(onPressed:()=>Navigator.pop(x),child:const Text('إغلاق'))]))))
+   ])),
+   actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('إغلاق'))],
+  ));
+ }
+\n IconData subIcon(String s)=>s=='الكيمياء'?Icons.science_rounded:s=='الفيزياء'?Icons.bolt_rounded:Icons.biotech_rounded;
  IconData kindIcon(String s)=>s=='كتاب ومذكرة'?Icons.menu_book_rounded:s=='اختبار'?Icons.quiz_rounded:s=='بحث'?Icons.manage_search_rounded:s=='مقال'?Icons.article_rounded:Icons.play_lesson_rounded;
  Future<void> addEntry(String kind) async {
   final t=TextEditingController(),b=TextEditingController();String g=grade,s=subject;String? path;
@@ -68,13 +94,13 @@ class _MainPageState extends State<MainPage>{
  Future<void> addHonor() async {final n=TextEditingController(),note=TextEditingController();String s=subject;final ok=await showDialog<bool>(context:context,builder:(d)=>StatefulBuilder(builder:(d,refresh)=>AlertDialog(title:Text('إضافة متفوق — '+grade),content:Column(mainAxisSize:MainAxisSize.min,children:[TextField(controller:n,decoration:const InputDecoration(labelText:'اسم الطالب')),DropdownButtonFormField<String>(value:s,decoration:const InputDecoration(labelText:'المادة'),items:subjects.map((x)=>DropdownMenuItem(value:x,child:Text(x))).toList(),onChanged:(v)=>refresh(()=>s=v??s)),TextField(controller:note,decoration:const InputDecoration(labelText:'الدرجة أو ملاحظة'))]),actions:[TextButton(onPressed:()=>Navigator.pop(d,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(d,true),child:const Text('حفظ'))])));if(ok==true&&n.text.trim().isNotEmpty){setState(()=>honors.add(Honor(n.text.trim(),grade,s,note.text.trim())));await save();}n.dispose();note.dispose();}
  Future<void> editMark(Student st) async {final c=TextEditingController(text:(marks[st.code]?[subject]??0).toString());final v=await showDialog<int>(context:context,builder:(d)=>AlertDialog(title:Text('درجة '+st.name),content:TextField(controller:c,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'الدرجة')),actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(d,int.tryParse(c.text)),child:const Text('حفظ'))]));if(v!=null){setState(()=>marks.putIfAbsent(st.code,()=>{})[subject]=v);await save();}c.dispose();}
  Future<void> download(Entry e) async {try{final d=await getApplicationDocumentsDirectory();final dir=Directory(d.path+'/saved');if(!await dir.exists())await dir.create(recursive:true);final f=File(dir.path+'/'+e.id+'.txt');await f.writeAsString(e.title+'\n'+e.grade+' • '+e.subject+' • '+e.type+'\n\n'+e.body);if(e.path!=null){final original=File(e.path!);if(await original.exists()){final ext=e.path!.contains('.')?e.path!.split('.').last:'file';await original.copy(dir.path+'/'+e.id+'_attachment.'+ext);}}if(!savedIds.contains(e.id))savedIds.add(e.id);await save();if(mounted){setState((){});ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('تم حفظ المحتوى في المحفوظات للقراءة دون إنترنت.')));}}catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('تعذر حفظ المحتوى')));}}
- @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(appBar:AppBar(title:const Text('منصة محمد القاضي العلمية',style:TextStyle(fontWeight:FontWeight.w800)),actions:[IconButton(onPressed:teacher?()=>setState(()=>teacher=false):login,icon:Icon(teacher?Icons.admin_panel_settings:Icons.person_outline),tooltip:'لوحة المعلم')]),body:IndexedStack(index:tab,children:[home(),library(),savedPage(),honorPage(),adminPage()]),bottomNavigationBar:NavigationBar(selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.local_library_outlined),label:'المكتبة'),NavigationDestination(icon:Icon(Icons.download_done_outlined),label:'المحفوظات'),NavigationDestination(icon:Icon(Icons.emoji_events_outlined),label:'الأوائل'),NavigationDestination(icon:Icon(Icons.dashboard_outlined),label:'المعلم')])));
+ @override Widget build(BuildContext context)=>Directionality(textDirection:TextDirection.rtl,child:Scaffold(appBar:AppBar(title:const Text('منصة محمد القاضي العلمية',style:TextStyle(fontWeight:FontWeight.w800)),actions:[IconButton(onPressed:studentLogin,icon:const Icon(Icons.login),tooltip:'دخول الطالب'),IconButton(onPressed:teacher?()=>setState(()=>teacher=false):login,icon:Icon(teacher?Icons.admin_panel_settings:Icons.person_outline),tooltip:'لوحة المعلم')]),body:IndexedStack(index:tab,children:[home(),library(),savedPage(),honorPage(),adminPage()]),bottomNavigationBar:NavigationBar(selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined),label:'الرئيسية'),NavigationDestination(icon:Icon(Icons.local_library_outlined),label:'المكتبة'),NavigationDestination(icon:Icon(Icons.download_done_outlined),label:'المحفوظات'),NavigationDestination(icon:Icon(Icons.emoji_events_outlined),label:'الأوائل'),NavigationDestination(icon:Icon(Icons.dashboard_outlined),label:'المعلم')])));
 
  Widget tile(IconData icon,String title,String sub,VoidCallback tap)=>Card(child:ListTile(onTap:tap,contentPadding:const EdgeInsets.all(10),leading:Container(width:48,height:48,decoration:BoxDecoration(color:const Color(0xFFE7F2F0),borderRadius:BorderRadius.circular(15)),child:Icon(icon,color:teal)),title:Text(title,style:const TextStyle(fontWeight:FontWeight.w800,color:navy)),subtitle:Text(sub),trailing:const Icon(Icons.chevron_left)));
  Widget home()=>ListView(padding:const EdgeInsets.all(16),children:[
   Container(padding:const EdgeInsets.all(24),decoration:BoxDecoration(gradient:const LinearGradient(colors:[navy,teal]),borderRadius:BorderRadius.circular(26)),child:const Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('من المعرفة تبدأ الرحلة',style:TextStyle(color:Colors.white,fontSize:26,fontWeight:FontWeight.w900)),SizedBox(height:8),Text('كتب وأبحاث ومقالات ودروس علمية في مساحة واحدة.',style:TextStyle(color:Colors.white,height:1.6))])),
   const SizedBox(height:20),const Text('المستويات الدراسية',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:navy)),...grades.map((g)=>tile(Icons.school_rounded,g,'الكيمياء • الفيزياء • الأحياء',()=>setState(()=>grade=g))),
-  const SizedBox(height:12),const Text('المواد',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:navy)),...subjects.map((s)=>tile(subIcon(s),s,'الدروس والكتب والاختبارات',()=>setState(()=>subject=s))),tile(Icons.menu_book,'المكتبة العلمية','تصفّح المحتوى',()=>setState(()=>tab=1))
+  const SizedBox(height:12),const Text('المواد',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:navy)),...subjects.map((s)=>tile(subIcon(s),s,'الدروس والكتب والاختبارات',()=>setState(()=>subject=s))),tile(Icons.menu_book,'المكتبة العلمية','تصفّح المحتوى',()=>setState(()=>tab=1)),tile(Icons.login,'دخول الطالب','الدخول بكود التسجيل الذي أعطاك إياه المعلم',studentLogin)
  ]);
  Widget library()=>ListView(padding:const EdgeInsets.all(16),children:[
   const Text('الدروس والمكتبة',style:TextStyle(fontSize:25,fontWeight:FontWeight.w900,color:navy)),const SizedBox(height:12),
