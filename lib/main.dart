@@ -78,7 +78,8 @@ class _MainPageState extends State<MainPage>{
    actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('إغلاق'))],
   ));
  }
-\n IconData subIcon(String s)=>s=='الكيمياء'?Icons.science_rounded:s=='الفيزياء'?Icons.bolt_rounded:Icons.biotech_rounded;
+
+ IconData subIcon(String s)=>s=='الكيمياء'?Icons.science_rounded:s=='الفيزياء'?Icons.bolt_rounded:Icons.biotech_rounded;
  IconData kindIcon(String s)=>s=='كتاب ومذكرة'?Icons.menu_book_rounded:s=='اختبار'?Icons.quiz_rounded:s=='بحث'?Icons.manage_search_rounded:s=='مقال'?Icons.article_rounded:Icons.play_lesson_rounded;
  Future<void> addEntry(String kind) async {
   final t=TextEditingController(),b=TextEditingController();String g=grade,s=subject;String? path;
